@@ -63,7 +63,7 @@ class fitter(object):
 		xdata = self.data[:,0]
 		ydata = self.data[:,1]
 
-		yerr = np.multiply(.001, ydata)
+		yerr = .001*np.ones_like(ydata)
 
 		def lorentzian(x, c, A, G, w0):
 			return c + (A/np.pi) * (.5*G)/((x-w0)**2+(.5*G)**2)
@@ -72,7 +72,7 @@ class fitter(object):
 			check_finite = True, xtol = err, maxfev = maxruns,
 			sigma = yerr)
 
-		chi_square = np.sum(lorentzian(xdata, *popt)-ydata)/(yerr**2)
+		chi_square = np.sum((lorentzian(xdata, *popt)-ydata)**2/(yerr**2))/(len(xdata) - len(popt) - 1)
 
 		yFit = lorentzian(xdata, *popt)
 		yuFit = lorentzian(xdata, *parms)
@@ -92,7 +92,7 @@ class fitter(object):
 		else:
 			pass
 
-		error_code(code = 0, path_to_errtext = "..")
+		error_code(code = 0)
 		return popt, chi_square, yFit, yuFit
 
 	def multi_lorentzian(self, parms, nres, domain, std_dev = 11, plot = True, err = 1e-10, maxruns = int(1e8), 
@@ -103,19 +103,31 @@ class fitter(object):
 		import numpy as np
 		import matplotlib.pyplot as plt
 
+		##Finding the peaks##
+
 		xdata = self.data[:,0]
 		ydata = self.data[:,1]
 
+		xpeaks, ypeaks = self.choose_domain(xdata, ydata, domain)
+
 		x_peak_coord, y_peak_coord = self.find_peaks(domain, std_dev)
 
-		print len(x_peak_coord), len(y_peak_coord)
+		x_peak_coord = x_peak_coord.flatten()
+		y_peak_coord = y_peak_coord.flatten()
 
-		parms[1+nres:2*nres+1] = y_peak_coord.flatten()
-		parms[2*nres+1:] = x_peak_coord.flatten()
+		##Now we have the peaks, so we'll put them into the initial guesses##
+
+		for i in range(0, len(y_peak_coord)):
+			parms[1+nres+i] = parms[0]-y_peak_coord[i]
+			parms[2*nres+1+i] = x_peak_coord[i]
 
 		parms = parms.flatten()
 
-		yerr = .01*np.ones_like(ydata)
+		##And set the error...##
+
+		yerr = .001*np.ones_like(ypeaks)
+
+		##And run the fit##
 
 		def multi_lorentz(x, *p):
 			y = np.zeros_like(x) + p[0]
@@ -126,35 +138,35 @@ class fitter(object):
 				y -= np.absolute(amp/(1+1.j*(x-center)/(gamma/2)))
 			return y.flatten()
 
-		popt, pcov = curve_fit(multi_lorentz, xdata, ydata, parms, 
+		popt, pcov = curve_fit(multi_lorentz, xpeaks, ypeaks, parms, 
 			check_finite = True, xtol = err, maxfev = maxruns)
 
-		chi_square = np.sum((-multi_lorentz(xdata, *popt)+ydata)**2/(yerr**2))/(len(xdata) - len(popt) - 1)
+		chi_square = np.sum((-multi_lorentz(xpeaks, *popt)+ypeaks)**2/(yerr)**2)/(len(xpeaks) - len(popt) - 1)
 
-		yFit = multi_lorentz(xdata, *popt)
-		yuFit = multi_lorentz(xdata, *parms)
+		yFit = multi_lorentz(xpeaks, *popt)
+		yuFit = multi_lorentz(xpeaks, *parms)
 
 		if plot == True:
 			plt.figure(figsize = (7,7))
 			plt.plot(xdata, ydata, 'o', ms = .3, label = r"$Raw \, Data$")
-			plt.plot(xdata, yFit, linewidth = 4, alpha = .6, label = r"$Fitted \, Curve$")
-			plt.plot(xdata, yuFit, alpha = .8, label = r"$Guesses$")
+			plt.plot(xpeaks, yFit, linewidth = 4, alpha = .6, label = r"$Fitted \, Curve$")
+			plt.plot(xpeaks, yuFit, alpha = .8, label = r"$Guesses$")
 			plt.xlabel(xlabel)
 			plt.ylabel(ylabel)
 			plt.title(title)
-			plt.legend(loc = 0) ##include a save_name
+			plt.legend(loc = 0) ##include a save_name?
 			plt.show()
 		else:
 			pass
 
-		error_code(0)
+		error_code(code = 0)
 		return popt, chi_square, yFit, yuFit
 
 	def calc_Q(self, parms, nres):
 		import numpy as np
 
 		qs = np.absolute(np.divide(parms[1+2*nres:], parms[1:nres+1]))
-		print qs
+		print "The Q(s) is(are): ", qs
 
 		return qs
 
