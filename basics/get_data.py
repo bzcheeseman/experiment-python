@@ -5,13 +5,8 @@ cwd = os.getcwd()
 
 def get_data(path_to_data, dataset, datatype = "csv", h5xlabel = None, h5ylabel = None, h5zlabel = None, 
 	path_to_errtext = cwd+"/..", path_to_library = cwd+"/.."):
-	import os
 
-	err = error_handling(path_to_errtext, path_to_library)
-
-	current = os.getcwd()
-
-	if current == path_to_data:
+	if cwd == path_to_data:
 		pass
 
 	else:
@@ -34,7 +29,7 @@ def get_data(path_to_data, dataset, datatype = "csv", h5xlabel = None, h5ylabel 
 
 			data = [xdata, ydata, zdata]
 
-			err.error_code(0)
+			error_code(0)
 			
 			return data
 		
@@ -47,12 +42,12 @@ def get_data(path_to_data, dataset, datatype = "csv", h5xlabel = None, h5ylabel 
 
 			data = [xdata, ydata]
  
-			err.error_code(0)
+			error_code(0)
 
 			return data
 
 	elif h5xlabel == None or h5ylabel == None:
-		err.error_code(5)
+		error_code(5)
 		return 5
 
 if __name__ == "__main__":
