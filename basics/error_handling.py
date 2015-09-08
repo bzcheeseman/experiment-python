@@ -1,10 +1,4 @@
-import os
-
-cwd = os.getcwd()
-
-def error_code(code, path_to_errtext = cwd+"/..", debug = False):
-
-		os.chdir(path_to_errtext)
+def error_code(code, debug = False):
 
 		if debug == True:
 			with open("error_codes.txt", 'r') as f:
