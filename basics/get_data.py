@@ -56,6 +56,7 @@ def get_data(path_to_data, dataset, datatype = "csv", h5xlabel = None, h5ylabel 
 		return 5
 
 if __name__ == "__main__":
-	print "useage"
+	print "Usage:\nget_data(path_to_data, dataset, **kwargs)"
+	print "Currently accepts csv files and h5 files of 2 or 3 dimensions"
 
 
