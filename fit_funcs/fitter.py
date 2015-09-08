@@ -95,7 +95,7 @@ class fitter(object):
 		error_code(code = 0)
 		return popt, chi_square, yFit, yuFit
 
-	def multi_lorentzian(self, parms, nres, domain, std_dev = 11, plot = True, err = 1e-10, maxruns = int(1e8), 
+	def multi_lorentzian(self, parms, nres, domain, upper = None, std_dev = 11, plot = True, err = 1e-10, maxruns = int(1e8), 
 		xlabel = r"$Frequency \, (Hz)$", ylabel = r"$Energy \, (dB)$", 
 		title = r"$Spectrum \, and \, Fit$"):
 
@@ -108,7 +108,7 @@ class fitter(object):
 		xdata = self.data[:,0]
 		ydata = self.data[:,1]
 
-		xpeaks, ypeaks = self.choose_domain(xdata, ydata, domain)
+		xpeaks, ypeaks = self.choose_domain(xdata, ydata, domain, upper = upper)
 
 		x_peak_coord, y_peak_coord = self.find_peaks(domain, std_dev)
 
@@ -123,7 +123,7 @@ class fitter(object):
 
 		parms = parms.flatten()
 
-		##And set the error...##
+		##And set the error...##UNDER CONSTRUCTION
 
 		yerr = .001*np.ones_like(ypeaks)
 
@@ -170,6 +170,21 @@ class fitter(object):
 
 		return qs
 
+	def weighted_avg(self, parms, nres):
+		from scipy.signal import argrelmin
+		import numpy as np
+
+		y_peaks = parms[1+nres:2*nres+1]
+		x_peaks = parms[2*nres+1:]
+
+		y_pks = np.sqrt(np.sum(y_peaks**2))
+
+		y_peaks = np.divide(np.sqrt(y_peaks**2), y_pks)
+
+		#print "y_peaks", y_peaks, np.sum(y_peaks)
+
+		print np.average(x_peaks, weights = y_peaks)
+		return np.average(x_peaks, weights = y_peaks)
 
 if __name__ == "__main__":
 	print "make sure all the inputs are in the right order..."
