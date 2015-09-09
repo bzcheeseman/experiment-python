@@ -6,17 +6,16 @@ from basics import get_data, error_code
 
 import os
 
-cwd = os.getcwd()
+cwd, _ = os.path.split(os.path.realpath(__file__))
 
 class fitter(object):
 
-	def __init__(self, path_to_data, dataset, model, save_name = None, 
-		datatype = "csv", h5labels = [None, None, None], 
-		path_to_errtext = cwd+"/..", debug = False):
+	def __init__(self, path_to_data, dataset, model = None, save_name = None,
+		datatype = "csv", h5labels = [None, None, None], debug = False):  
+		## will implement a function that chooses the fit based on the model inputted initially
 
 		self.data = get_data(path_to_data = path_to_data, dataset = dataset, datatype = datatype, 
-			h5xlabel = h5labels[0], h5ylabel = h5labels[1], h5zlabel = h5labels[2],
-			path_to_errtext = path_to_errtext, path_to_library = path_to_errtext)
+			h5labels = h5labels, path_to_library = cwd+"/..")
 
 		self.model = model
 		if save_name is not None:
@@ -92,12 +91,14 @@ class fitter(object):
 		else:
 			pass
 
+		os.chdir(cwd+'/..')
 		error_code(code = 0)
+
 		return popt, chi_square, yFit, yuFit
 
 	def multi_lorentzian(self, parms, nres, domain, upper = None, std_dev = 11, plot = True, err = 1e-10, maxruns = int(1e8), 
 		xlabel = r"$Frequency \, (Hz)$", ylabel = r"$Energy \, (dB)$", 
-		title = r"$Spectrum \, and \, Fit$"):
+		title = r"$Spectrum \, and \, Fit$", outside_use = False):
 
 		from scipy.optimize import curve_fit
 		import numpy as np
@@ -159,8 +160,14 @@ class fitter(object):
 		else:
 			pass
 
+		os.chdir(cwd+'/..')
+
 		error_code(code = 0)
-		return popt, chi_square, yFit, yuFit
+
+		if outside_use != False:
+			return popt, chi_square, yFit, yuFit, xpeaks
+		else:
+			return popt, chi_square, yFit, yuFit
 
 	def calc_Q(self, parms, nres):
 		import numpy as np

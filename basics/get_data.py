@@ -1,10 +1,13 @@
 from error_handling import *
 import os
 
-cwd = os.getcwd()
+cwd, _ = os.path.split(os.path.realpath(__file__))
 
-def get_data(path_to_data, dataset, datatype = "csv", h5xlabel = None, h5ylabel = None, h5zlabel = None, 
-	path_to_errtext = cwd+"/..", path_to_library = cwd+"/.."):
+def get_data(path_to_data, dataset, datatype = "csv", h5labels = [None, None, None], path_to_library = cwd+"/.."):
+
+	h5xlabel = h5labels[0]
+	h5ylabel = h5labels[1]
+	h5zlabel = h5labels[2]
 
 	if cwd == path_to_data:
 		pass
