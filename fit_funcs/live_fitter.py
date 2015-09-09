@@ -8,18 +8,11 @@ import os
 
 cwd, _ = os.path.split(os.path.realpath(__file__))
 
-class fitter(object):
+class live_fitter(object):
+	##for interfacing with the expt class in the DSL
 
-	def __init__(self, path_to_data, dataset, model = None, save_name = None,
-		datatype = "csv", h5labels = [None, None, None], debug = False):  
-		## will implement a function that chooses the fit based on the model inputted initially
-
-		self.data = get_data(path_to_data = path_to_data, dataset = dataset, datatype = datatype, 
-			h5labels = h5labels, path_to_library = cwd+"/..")
-
-		self.model = model
-		if save_name is not None:
-			self.save_name = save_name
+	def __init__(self, expt):
+		self.expt = expt
 
 	def choose_domain(self, xdata, ydata, domain, upper = None):
 		import numpy as np
@@ -51,16 +44,13 @@ class fitter(object):
 
 		return x_peak_coord, y_peak_coord
 
-	def single_lorentzian(self, parms, domain, upper = None, plot = True, err = 1e-10, maxruns = int(1e8), 
+	def single_lorentzian(self, xdata, ydata, parms, domain, upper = None, plot = True, err = 1e-10, maxruns = int(1e8), 
 		xlabel = r"$Frequency \, (Hz)$", ylabel = r"$Energy \, (dB)$", 
 		title = r"$Spectrum \, and \, Fit$"):
 
 		from scipy.optimize import curve_fit
 		import numpy as np
 		import matplotlib.pyplot as plt
-
-		xdata = self.data[:,0]
-		ydata = self.data[:,1]
 
 		xpeaks, ypeaks = self.choose_domain(xdata, ydata, domain, upper = upper)
 
@@ -98,7 +88,7 @@ class fitter(object):
 
 		return popt, chi_square, yFit, yuFit
 
-	def multi_lorentzian(self, parms, nres, domain, upper = None, std_dev = 11, plot = True, err = 1e-10, maxruns = int(1e8), 
+	def multi_lorentzian(self, xdata, ydata, parms, nres, domain, upper = None, std_dev = 11, plot = True, err = 1e-10, maxruns = int(1e8), 
 		xlabel = r"$Frequency \, (Hz)$", ylabel = r"$Energy \, (dB)$", 
 		title = r"$Spectrum \, and \, Fit$", outside_use = False):
 
@@ -107,9 +97,6 @@ class fitter(object):
 		import matplotlib.pyplot as plt
 
 		##Finding the peaks##
-
-		xdata = self.data[:,0]
-		ydata = self.data[:,1]
 
 		xpeaks, ypeaks = self.choose_domain(xdata, ydata, domain, upper = upper)
 
@@ -191,13 +178,6 @@ class fitter(object):
 
 		print "The weighted average frequency is:", np.average(x_peaks, weights = y_peaks**2)/1e9, "GHz"
 		return np.average(x_peaks, weights = y_peaks**2)
-
-if __name__ == "__main__":
-	print "make sure all the inputs are in the right order..."
-
-
-
-
 
 
 
