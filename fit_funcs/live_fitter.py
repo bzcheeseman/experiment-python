@@ -27,13 +27,10 @@ class live_fitter(object):
 
 		return xdata[lower_bound:upper_bound], ydata[lower_bound:upper_bound]
 
-	def find_peaks(self, domain, std_dev = 11):
+	def find_peaks(self, xdata, ydata, domain, std_dev = 11):
 		from scipy.ndimage.filters import gaussian_filter
 		from scipy.signal import argrelmin
 		import numpy as np
-
-		xdata = self.data[:,0]
-		ydata = self.data[:,1]
 
 		xpeaks, ypeaks = self.choose_domain(xdata, ydata, domain)
 
@@ -88,7 +85,7 @@ class live_fitter(object):
 
 		return popt, chi_square, yFit, yuFit
 
-	def multi_lorentzian(self, xdata, ydata, parms, nres, domain, upper = None, std_dev = 11, plot = True, err = 1e-10, maxruns = int(1e8), 
+	def multi_lorentzian(self, xdata, ydata, parms, nres, domain, upper = .98, std_dev = 11, plot = True, err = 1e-10, maxruns = int(1e8), 
 		xlabel = r"$Frequency \, (Hz)$", ylabel = r"$Energy \, (dB)$", 
 		title = r"$Spectrum \, and \, Fit$", outside_use = False):
 
@@ -100,7 +97,7 @@ class live_fitter(object):
 
 		xpeaks, ypeaks = self.choose_domain(xdata, ydata, domain, upper = upper)
 
-		x_peak_coord, y_peak_coord = self.find_peaks(domain, std_dev)
+		x_peak_coord, y_peak_coord = self.find_peaks(xdata, ydata, domain, std_dev)
 
 		x_peak_coord = x_peak_coord.flatten()
 		y_peak_coord = y_peak_coord.flatten()
@@ -172,12 +169,12 @@ class live_fitter(object):
 		y_peaks = parms[1+nres:2*nres+1]
 		x_peaks = parms[2*nres+1:]
 
-		y_pks = np.sqrt(np.sum(y_peaks**2))
+		y_pks = np.sum(np.absolute(y_peaks))
 
 		y_peaks = np.divide(y_peaks, y_pks)
 
-		print "The weighted average frequency is:", np.average(x_peaks, weights = y_peaks**2)/1e9, "GHz"
-		return np.average(x_peaks, weights = y_peaks**2)
+		print "The weighted average frequency is:", np.average(x_peaks, weights = np.absolute(y_peaks))/1e9, "GHz"
+		return np.average(x_peaks, weights = np.absolute(y_peaks))
 
 
 

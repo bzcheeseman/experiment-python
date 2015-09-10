@@ -185,12 +185,12 @@ class fitter(object):
 		y_peaks = parms[1+nres:2*nres+1]
 		x_peaks = parms[2*nres+1:]
 
-		y_pks = np.sqrt(np.sum(y_peaks**2))
+		y_pks = np.sum(np.absolute(y_peaks))
 
 		y_peaks = np.divide(y_peaks, y_pks)
 
-		print "The weighted average frequency is:", np.average(x_peaks, weights = y_peaks**2)/1e9, "GHz"
-		return np.average(x_peaks, weights = y_peaks**2)
+		print "The weighted average frequency is:", np.average(x_peaks, weights = np.absolute(y_peaks))/1e9, "GHz"
+		return np.average(x_peaks, weights = np.absolute(y_peaks))
 
 if __name__ == "__main__":
 	print "make sure all the inputs are in the right order..."
