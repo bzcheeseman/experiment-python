@@ -1,3 +1,5 @@
+__author__ = "Aman LaChapelle"
+
 import sys
 
 sys.path.append("..")

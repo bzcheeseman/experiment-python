@@ -1,3 +1,5 @@
+__author__ = "Aman LaChapelle"
+
 import numpy as np
 from fitter import *
 from live_fitter import *
