@@ -1,3 +1,5 @@
+__author__ = "Aman LaChapelle"
+
 from error_handling import *
 import os
 

@@ -1,3 +1,5 @@
+__author__ = "Aman LaChapelle"
+
 def error_code(code, debug = False):
 
 	import os
