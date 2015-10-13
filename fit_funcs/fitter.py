@@ -167,7 +167,7 @@ class fitter(object):
 		error_code(code = 0)
 
 		if outside_use != False:
-			return popt, chi_square, yFit, yuFit, xpeaks
+			return {"parms":popt, "chi":chi_square, "fitted":yFit, "guesses":yuFit, "sel_freqs":xpeaks}
 		else:
 			return popt, chi_square, yFit, yuFit
 
@@ -191,6 +191,79 @@ class fitter(object):
 
 		print "The weighted average frequency is:", np.average(x_peaks, weights = np.absolute(y_peaks))/1e9, "GHz"
 		return np.average(x_peaks, weights = np.absolute(y_peaks))
+
+	def pos_multi_lorentzian(self, parms, nres, domain, upper = None, std_dev = 11, plot = True, err = 1e-10, maxruns = int(1e8), 
+		xlabel = r"$Frequency \, (Hz)$", ylabel = r"$Energy \, (dB)$", 
+		title = r"$Spectrum \, and \, Fit$", outside_use = False):
+
+		from scipy.optimize import curve_fit
+		import numpy as np
+		import matplotlib.pyplot as plt
+
+		##Finding the peaks##
+
+		xdata = self.data[:,0]
+		ydata = self.data[:,1]
+
+		xpeaks, ypeaks = self.choose_domain(xdata, ydata, domain, upper = upper)
+
+		x_peak_coord, y_peak_coord = self.find_peaks(domain, std_dev)
+
+		x_peak_coord = x_peak_coord.flatten()
+		y_peak_coord = y_peak_coord.flatten()
+
+		##Now we have the peaks, so we'll put them into the initial guesses##
+
+		for i in range(0, len(y_peak_coord)):
+			parms[1+nres+i] = parms[0]-y_peak_coord[i]
+			parms[2*nres+1+i] = x_peak_coord[i]
+
+		parms = parms.flatten()
+
+		##And set the error...##UNDER CONSTRUCTION
+
+		yerr = .001*np.ones_like(ypeaks)
+
+		##And run the fit##
+
+		def multi_lorentz(x, *p):
+			y = np.zeros_like(x) + p[0]
+			for i in range(1, len(p)-2*nres):
+				gamma = p[i]
+				amp = p[i+nres]
+				center = p[i+2*nres]
+				y += np.absolute(amp/(1+1.j*(x-center)/(gamma/2)))
+			return y.flatten()
+
+		popt, pcov = curve_fit(multi_lorentz, xpeaks, ypeaks, parms, 
+			check_finite = True, xtol = err, maxfev = maxruns)
+
+		chi_square = np.sum((-multi_lorentz(xpeaks, *popt)+ypeaks)**2/(yerr)**2)/(len(xpeaks) - len(popt) - 1)
+
+		yFit = multi_lorentz(xpeaks, *popt)
+		yuFit = multi_lorentz(xpeaks, *parms)
+
+		if plot == True:
+			plt.figure(figsize = (7,7))
+			plt.plot(xdata, ydata, 'o', ms = .3, label = r"$Raw \, Data$")
+			plt.plot(xpeaks, yFit, linewidth = 4, alpha = .6, label = r"$Fitted \, Curve$")
+			plt.plot(xpeaks, yuFit, alpha = .8, label = r"$Guesses$")
+			plt.xlabel(xlabel)
+			plt.ylabel(ylabel)
+			plt.title(title)
+			plt.legend(loc = 0) ##include a save_name?
+			plt.show()
+		else:
+			pass
+
+		os.chdir(cwd+'/..')
+
+		error_code(code = 0)
+
+		if outside_use != False:
+			return {"popt":popt, "chi":chi_square, "yFit":yFit, "yuFit":yuFit, "xpeaks":xpeaks}
+		else:
+			return popt, chi_square, yFit, yuFit
 
 if __name__ == "__main__":
 	print "make sure all the inputs are in the right order..."

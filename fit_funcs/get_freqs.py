@@ -16,12 +16,12 @@ class get_freqs(fitter):
 
 		self.nres = nres
 		self.upper = upper
-		popt, chi, yFit, yuFit, xpeaks = name.multi_lorentzian(parms = guesses, nres = nres, domain = domain, upper = upper, plot = False, outside_use = True)
-		self.popt = popt
-		self.chi = chi
-		self.yFit = yFit
-		self.yuFit = yuFit
-		self.xpeaks = xpeaks
+		outputs = name.multi_lorentzian(parms = guesses, nres = nres, domain = domain, upper = upper, plot = False, outside_use = True)
+		self.popt = outputs["popt"]
+		self.chi = outputs["chi"]
+		self.yFit = outputs["yFit"]
+		self.yuFit = outputs["yuFit"]
+		self.xpeaks = outputs["xpeaks"]
 
 		self.xAvg = name.weighted_avg(popt, nres)
 
@@ -222,6 +222,100 @@ class get_freqs_live(live_fitter):
 			expt.plotter.plot_y("Average", xAvg)
 
 		return popt, xAvg
+
+class get_twod_freqs(fitter):
+
+	def __init__(self, path_to_data, datasets, guesses, Nx, Ny, domain, upper = None): 
+		##for a more comprehensive instance of fitter use the actual file or edit it here
+			##make sure the first dataset is the reflection measurement
+
+		self.Nx = Nx
+		self.Ny = Ny
+
+		self.nres = Nx*Ny
+
+		self.upper = upper
+		self.domain = domain
+
+		names = {}
+		parameters = {}
+
+		for i in range(0, Nx):
+			name = fitter(path_to_data = path_to_data, dataset = datasets[i])
+			names["(%d, %d)" % (1, i+1)] = name
+			##now we have a dictionary of 'fitter' objects set up, 
+				##we need the fit parameters stored in something similar
+			parameters["(%d, %d)" % (1, i+1)] = name.pos_multi_lorentzian(parms = guesses, 
+				nres = self.nres, domain = domain, upper = upper)
+
+		##So initializing this class will fit all the peaks and store the fitter instances
+			##and the parameters of each dataset in the set of datasets provided.
+
+		self.names = names
+		self.parameters = parameters
+		
+
+	def get_freqs(self, xlabel = r"$Frequency \, (Hz)$", ylabel = r"$Energy \, (dB)$", 
+		title = r"$Spectrum \, and \, Fit$", disp_avg = True):
+
+		##set up global variables here to get a list running
+		base_freqs = {}
+		phis = {}
+		tunnelings = {}
+		emmu = {}
+
+		##find all the parameters
+		for k in range(1, Ny+1): #indexing (?) - might cause an error
+			##find parameters row by row in -|-|-|...-| shape
+			for i in range(1, Nx+1):
+				##define popt
+				popt = parameters["(%d,%d)" % (k,i)]["popt"]
+
+				phi = np.divide(np.sqrt(popt[1+self.nres:1+2*self.nres]), 
+					np.linalg.norm(np.sqrt(popt[1+self.nres:1+2*self.nres])))
+
+				mu = 0
+
+				##find the mu
+				for j in range(1, self.nres):
+					mu += (popt[j+2*self.nres]*(phi[j-1]**2))
+
+				base_freqs["(%d,%d)" % (k,i)] = mu
+				emmu["(%d,%d)" % (k,i)] = np.subtract(popt[1+2*self.nres:], mu)
+				phis["(%d,%d)" % (k,i)] = phi
+
+				##now we have the phi and mu for (1, i+1), need to find t_(1,1)_(1,i+1)
+
+				try: ##in case we're on the edge (i,j) = (1,j)
+					t = 0
+					for j in range(1, self.nres):
+						t += (popt[j+2*self.nres]*phis["(%d,%d)" % (k,i-1)][j-1]\
+							*phis["(%d,%d)" % (k,i)][j-1])
+
+					tunnelings["(%d,%d)-(%d,%d)" % (k,i-1, k,i)] = t
+
+					##so now we have the mu/t/phi for the first row (hopefully)
+						##time to find the vertical tunnelings
+
+					try: ##in case we're on the edge (i,j) = (i, Ny)
+						t = 0
+						t = -np.sqrt(np.sum( (emmu["(%d,%d)" % (k,i-1)]*phis["(%d,%d)" % (k,i)] \
+							- tunnelings["(%d,%d)-(%d,%d)" % (k,i-1, k,i)]*phis["(%d,%d)" % (k,i)])**2 ))
+						tunnelings["(%d,%d)-(%d,%d)" % (k+1, i)] = t
+
+					except IndexError:
+						tunnelings["(%d,%d)-(%d,%d)" % (k+1, i)] = 0
+
+				except IndexError:
+					tunnelings["(%d,%d)-(%d,%d)" % (k,i-1, k,i)] = 0
+
+				##aaaaand carriage return, next row, same pattern
+
+				##hopefully all the extraneous tunnelings (to the left and below) will be zero
+					##and will be easily filtered out
+
+		return {"base_freqs":base_freqs, "phis":phis, "tunnelings":tunnelings}
+
 
 
 
