@@ -35,10 +35,10 @@ def main():
 	base_freqs["(1,1)"] = mu11
 	print base_freqs
 
-####find t_11->12
+####find t_11->12###not working
 	t1112 = 0
 	for i in range(0, nres):
-		t1112 += meas_energies[i] * np.absolute(meas_trans_phi[i]*meas_trans_phi[i+nres])
+		t1112 += meas_energies[i] * np.absolute(meas_trans_phi[i])
 
 	tunnelings["(1,1)-(1,2)"] = t1112
 	print tunnelings
