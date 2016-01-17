@@ -1,3 +1,5 @@
+__author__ = "Aman LaChapelle"
+
 def error_code(code, debug = False):
 
 	import os
@@ -18,7 +20,7 @@ def error_code(code, debug = False):
 			print lines[code]
 			f.close()
 			return code
-
+			
 		except IndexError:
 			print "Code not found, suggest the code and text for addition to the text?"
 			f.close()
